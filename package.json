@@ -1,0 +1,22 @@
+{
+  "name": "erm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@azure/identity": "^4.5.0",
+    "axios": "^1.7.9",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.7",
+    "mathjs": "^14.0.1",
+    "openai": "^4.77.0",
+    "seedrandom": "^3.0.5",
+    "winston": "^3.17.0"
+  }
+}

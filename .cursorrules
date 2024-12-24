@@ -1,0 +1,133 @@
+# Cursor Rules for JavaScript SDK
+
+<general_rules>
+## Best Practices for Writing Code
+
+* **DRY and SOLID Principles**: Ensure the code is modular, maintainable, and efficient by adhering to the **DRY** (Don't Repeat Yourself) and **SOLID** principles. Break down functionalities into single-responsibility classes and functions to enhance scalability and ease of maintenance.
+
+* **Readability and Maintainability**: Write concise and readable code. Use meaningful variable and function names, and include comments to explain complex logic or non-obvious code sections. Consistent formatting and adherence to a coding style guide (e.g., ESLint with Airbnb or Standard configurations) are encouraged.
+
+* **Declarative and Functional**: Favor declarative programming paradigms and functional programming principles where appropriate. Utilize immutability to ensure predictable behavior, making the code easier to reason about and debug.
+
+* **Error Handling and Security**: Implement robust error handling mechanisms to gracefully manage unexpected scenarios and failures. Validate and sanitize all inputs to prevent security vulnerabilities such as injection attacks. Avoid exposing sensitive information in error messages.
+
+</general_rules>
+
+<working_with_llms>
+## Working with Large Language Models (LLMs)
+
+When integrating Large Language Models (LLMs) into your JavaScript application, follow these guidelines to ensure effective and efficient interactions:
+
+* **Use Dedicated SDKs or Libraries**: Leverage specialized SDKs or libraries that facilitate communication with LLM APIs. Ensure these tools are well-maintained and compatible with your project's requirements.
+
+* **Clear Format Instructions**: Provide explicit and clear format instructions within your prompts to guide the LLM in generating the desired output. Utilize structured formats like JSON or Markdown code blocks to enhance parseability.
+
+* **Efficient Prompt Building**: Utilize builder patterns or helper classes (e.g., `PromptBuilder`) to construct prompts incrementally. This approach promotes readability and maintainability by modularizing prompt components.
+
+* **Asynchronous Operations**: Implement asynchronous handling when making API calls to LLMs. Use `async/await` to manage promises effectively, ensuring that your application remains responsive.
+
+* **Stream Large Outputs**: For tasks requiring the generation of large amounts of text, enable streaming (`stream: true`) if supported by the API. This approach reduces latency and improves user experience by allowing partial results to be processed incrementally.
+
+* **Response Parsing**: Develop robust parsers to handle and validate the LLM's output. Ensure that the responses conform to the expected format and gracefully handle deviations or errors.
+
+* **Rate Limiting and Throttling**: Implement rate limiting and throttling mechanisms to adhere to the LLM API's usage policies and prevent exceeding quota limits.
+
+* **Secure API Keys**: Store and manage API keys securely using environment variables or secure vaults. Avoid hardcoding sensitive credentials within the codebase.
+
+</working_with_llms>
+
+<explain_appl>
+## Explanation of the JavaScript SDK Design
+
+The JavaScript SDK is designed to facilitate the integration and optimization of prompts for Large Language Models (LLMs). It emphasizes modularity, maintainability, and adherence to best coding practices. Below are the key components and their functionalities:
+
+* **Classes and Structures**:
+  * **`PromptBuilder`**: A helper class that aids in constructing prompts incrementally. It manages the addition of prompt segments and ensures proper formatting.
+  
+  * **`Feedback` and `Exemplar`**: Data classes representing feedback and exemplar instances. They encapsulate relevant attributes and maintain their respective scores for prioritization.
+  
+  * **`MemoryBase`**: A foundational class providing shared functionalities for memory management, including score updating and probability calculations using the Softmax function.
+  
+  * **`FeedbackMemory` and `ExemplarFactory`**: Specialized classes inheriting from `MemoryBase` to manage feedback and exemplars, respectively. They handle the addition, retrieval, and updating of their stored data based on performance metrics.
+
+* **LLM Interaction**:
+  * **`gen` Function**: A generic function responsible for communicating with the LLM API. It sends constructed prompts and retrieves responses, handling API configurations and error management.
+
+* **Optimization Workflow**:
+  * **`ERM` Class**: The core optimizer class that orchestrates the evaluation and refinement of prompts. It manages the optimization loop, leveraging feedback and exemplars to iteratively improve prompt performance.
+
+* **Utilities**:
+  * **Helper Functions**: Functions like `softmax` and `sampleIndices` assist in probability calculations and randomized selections based on defined criteria.
+
+* **Asynchronous Handling**:
+  * The SDK extensively uses asynchronous programming patterns (`async/await`) to manage API calls and ensure non-blocking operations, enhancing performance and scalability.
+
+* **Error Handling and Logging**:
+  * Utilizes the `winston` library for structured and leveled logging, facilitating easier debugging and monitoring of the application's behavior.
+  * Implements comprehensive error handling to manage and log unexpected scenarios gracefully.
+
+* **Configuration and Extensibility**:
+  * Parameters like temperature, threshold, and beta are configurable, allowing fine-tuning of the memory management and selection mechanisms.
+  * The modular design promotes easy extension and integration of additional functionalities as needed.
+
+</explain_appl>
+
+<example>
+## Examples
+
+### Example 1: Optimizing a Zero-Shot Classifier Prompt
+
+```javascript
+const { ERM } = require('./erm_optimizer'); // Assuming the code is in 'erm_optimizer.js'
+const logger = require('winston');
+
+// Sample data
+const trainData = [
+    { input: "Turn left at the next street.", target: "navigation" },
+    { input: "E=mc^2", target: "physics" },
+    // Add more training samples
+];
+
+const valData = [
+    { input: "The capital of France is Paris.", target: "geography" },
+    // Add more validation samples
+];
+
+const testData = [
+    { input: "Photosynthesis occurs in the chloroplast.", target: "biology" },
+    // Add more test samples
+];
+
+// Initial prompt
+const initialPrompt = `
+## Task
+Based on the input text, classify it into one of the predefined categories.
+## Output format
+Provide the category label only.
+## Prediction
+Text: {input}
+Label:
+`.trim();
+
+// Initialize ERM
+const erm = new ERM();
+
+// Run optimization
+(async () => {
+    try {
+        const [finalScore, finalPrompt] = await erm.optimize(initialPrompt, trainData, valData, 5);
+        logger.info(`Final score on validation set: ${finalScore}`);
+        logger.info(`Final prompt:\n${finalPrompt}`);
+
+        // Evaluate on test data
+        const initialTestResults = await erm.evaluate(initialPrompt, testData);
+        const initialTestScore = initialTestResults.filter(r => r).length / initialTestResults.length;
+        logger.info(`Initial score on test set: ${initialTestScore}`);
+
+        const finalTestResults = await erm.evaluate(finalPrompt, testData);
+        const finalTestScore = finalTestResults.filter(r => r).length / finalTestResults.length;
+        logger.info(`Final score on test set: ${finalTestScore}`);
+    } catch (error) {
+        logger.error(`Optimization failed: ${error.message}`);
+    }
+})();

@@ -1,0 +1,9 @@
+## Task
+If you follow these instructions, do you return to the starting point?
+
+## Output format
+Answer Yes or No as labels.
+
+## Prediction
+Text: {input}
+Label:
